@@ -1,0 +1,9 @@
+module DCMS_CORBA{
+	interface DCMS{
+		string createTRecord(in string managerId ,in string firstName, in string lastName, in string address, in string phone, in string specialization, in string location);
+		string createSRecord(in string managerId ,in string firstName, in string lastName, in string courseRegistered, in string status, in string statusDate);
+		string getRecordCounts(in string managerId);
+		string editRecord(in string managerId, in string recordID, in string fieldName, in string newValue);
+		string transferRecord(in string managerId, in string recordID, in string remoteCenterServerName);
+	};
+};
