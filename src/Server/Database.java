@@ -30,13 +30,8 @@ import java.util.concurrent.Future;
 import Config.*;
 import Config.PublicParamters.*;
 import Record.*;
-import org.omg.CORBA.ORB;
-import org.omg.CosNaming.NameComponent;
-import org.omg.CosNaming.NamingContextExt;
-import org.omg.CosNaming.NamingContextExtHelper;
-import org.omg.PortableServer.POA;
-import org.omg.PortableServer.POAHelper;
-import DCMS_CORBA.*;
+import Replica.Replica;
+import MiddleWare.*;
 
 /**
  * Server class, using CORBA, and UDP, for server-server communication
@@ -44,18 +39,18 @@ import DCMS_CORBA.*;
  *
  */
 
-public class CenterServer {	
+public class Database {	
 	
 	private File logFile = null;
 	private HashMap<Character, LinkedList<Record>> recordData;  // store Student Record and Teacher Record. Servers doen't share record
 	private Location location;
 	private int recordCount = 0; 
-	private ORB orb;
+	private Replica server;
 	
-	public CenterServer(Location loc)throws IOException{
-		super();
+	public Database(Location loc, int id, Replica replica)throws IOException{
 		location = loc;
-		logFile = new File(location+"_log.txt");
+		server = replica;
+		logFile = new File(location+Integer.toString(id)+"_log.txt");
 		if(! logFile.exists())
 			logFile.createNewFile();
 		else{
@@ -65,130 +60,6 @@ public class CenterServer {
 		recordData = new HashMap<Character, LinkedList<Record>>();
 	}
 	
-	/**
-	 * Set ORB function
-	 * @param orb_val
-	 */
-	public void setORB(ORB orb_val) {
-	    this.orb = orb_val;
-	}
-	
-	/**
-	 *  create registry, corba binding with registry
-	 * @throws Exception
-	 */
-	public void exportServer(String[] args) throws Exception {
-
-		try {
-			//initial the port number of 1050;
-			Properties props = new Properties();
-	        props.put("org.omg.CORBA.ORBInitialPort", PublicParamters.ORB_INITIAL_PORT);
-	        
-			// create and initialize the ORB
-			ORB orb = ORB.init(args, props);
-
-			// get reference to rootpoa & activate the POAManager
-			POA rootpoa = POAHelper.narrow(orb.resolve_initial_references("RootPOA"));
-			rootpoa.the_POAManager().activate();
-
-			// create servant and register it with the ORB
-			this.setORB(orb); 
-
-			// get object reference from the servant
-			org.omg.CORBA.Object ref = rootpoa.servant_to_reference(this);
-			DCMS href = DCMSHelper.narrow(ref);
-			    
-			// get the root naming context
-			// NameService invokes the name service
-			org.omg.CORBA.Object objRef = orb.resolve_initial_references("NameService");
-			
-			// Use NamingContextExt which is part of the Interoperable
-			// Naming Service (INS) specification.
-			NamingContextExt ncRef = NamingContextExtHelper.narrow(objRef);
-
-			// bind the Object Reference in Naming
-			String name = location.toString();
-			NameComponent path[] = ncRef.to_name(name);
-			ncRef.rebind(path, href);
-
-			System.out.println("Center Server " +location.toString()+" is up ...");
-
-			// wait for invocations from clients
-			orb.run();
-
-		} catch (Exception e) {
-			System.err.println("ERROR: " + e);
-	        e.printStackTrace(System.out);
-		}
-
-		System.out.println("Center Server " +location.toString()+" Exiting ...");
-	}
-	
-
-	// create new thread wrapper class
-	public void openUDPListener(){
-
-		new UDPListenerThread(this){
-
-		}.start();
-
-	}
-	
-	// thread for while(true) loop, waiting for reply
-	private class UDPListenerThread extends Thread{
-
-		private CenterServer server = null;
-		
-		private String recordCount ;
-		
-		public UDPListenerThread(CenterServer threadServer) {
-			server = threadServer;
-		}
-		
-		@Override
-		public void run() {
-			DatagramSocket aSocket = null;
-
-			try {
-				aSocket  = new DatagramSocket(server.location.getPort());
-				byte[] buffer = new byte[1000];
-				
-				// 3 types of reply, getRecordCount, move Student Record among server, move teacher record among server
-				while(true){
-					DatagramPacket request = new DatagramPacket(buffer, buffer.length);
-					aSocket.receive(request);
-					if(request.getData() != null){
-						String requestStr = new String(request.getData(), request.getOffset(),request.getLength());
-						if(requestStr.equalsIgnoreCase("RecordCounts")){ 
-							server.writeToLog("Receive UDP message for : "+ requestStr );
-							recordCount = Integer.toString(server.recordCount);
-							DatagramPacket reply = new DatagramPacket(recordCount.getBytes(),recordCount.getBytes().length, request.getAddress(), request.getPort()); 
-							aSocket.send(reply);
-						}
-						else if (requestStr.substring(0, 13).equalsIgnoreCase("TeacherRecord")){
-							server.writeToLog("Receive UDP message for creating : "+ requestStr.substring(0, 13));
-							String[] info = requestStr.split("&");
-							server.createTRecord(info[1], info[2], info[3], info[4], info[5], info[6], info[7]);
-							String replyStr = "Successfully create Teatcher Record";
-							DatagramPacket reply = new DatagramPacket(replyStr.getBytes(),replyStr.getBytes().length, request.getAddress(), request.getPort()); 
-							aSocket.send(reply);
-						}
-						else if (requestStr.substring(0, 13).equalsIgnoreCase("StudentRecord")){
-							server.writeToLog("Receive UDP message for creating : "+ requestStr.substring(0, 13));
-							String[] info = requestStr.split("&");
-							server.createSRecord(info[1], info[2], info[3], info[4].replaceAll("\\[", "").replaceAll("\\]",""), info[5], info[6]);
-							String replyStr = "Successfully create Student Record";
-							DatagramPacket reply = new DatagramPacket(replyStr.getBytes(),replyStr.getBytes().length, request.getAddress(), request.getPort()); 
-							aSocket.send(reply);
-						}
-					}
-				}
-			}catch (SocketException e ){System.out.println("Socket"+ e.getMessage());
-			}catch (IOException e) {System.out.println("IO"+e.getMessage());
-			}finally { if (aSocket !=null ) aSocket.close();}
-		}
-	}
-		
 	/*
 	 * (non-Javadoc)
 	 * @see Assignment2.DCMSOperation#createTRecord(java.lang.String, java.lang.String, java.lang.String, java.lang.String, Assignment1.PublicParamters.Specialization, Assignment1.PublicParamters.Location)
@@ -247,14 +118,14 @@ public class CenterServer {
 	public String getRecordCounts(String managerId) throws IOException{
 		this.writeToLog("try to count all record at "+ location.toString());
 		String output = this.location.toString() + " " + recordCount + ", ";
-		if(ServerRunner.serverList.size() ==1 ){
+		if(server.getDatabaseList().size() ==1 ){
 			return output;
 		}
 		// send request using multi threading
 //		else{
 //			ExecutorService pool = Executors.newFixedThreadPool(ServerRunner.serverList.size()-1);
 //			List<Future<String>> requestArr = new ArrayList<Future<String>>();
-//			for(CenterServer server : ServerRunner.serverList){
+//			for(Database server : ServerRunner.serverList){
 //				if(server.getLocation() !=this.getLocation()){
 //					Future<String> request = pool.submit(new RecordCountRequest(this));
 //					requestArr.add(request);
@@ -272,9 +143,9 @@ public class CenterServer {
 //			pool.shutdown();
 //		}
 		// send request one by one, no threading
-		for(CenterServer server : ServerRunner.serverList){
-			if(server.getLocation() !=this.getLocation()){
-				output += server.getLocation().toString() + " " + requestRecordCounts(server) + ",";
+		for(Database database : server.getDatabaseList()){
+			if(database.getLocation() !=this.getLocation()){
+				output += database.getLocation().toString() + " " + database.getRecordCount() + ",";
 			}
 		}
 //		
@@ -285,10 +156,10 @@ public class CenterServer {
 
 	private class RecordCountRequest implements Callable<String>{
 		
-		private CenterServer server;
+		private Database server;
 		private String output;
 
-		public RecordCountRequest(CenterServer server){
+		public RecordCountRequest(Database server){
 			this.server = server;
 		}
 		
@@ -333,7 +204,7 @@ public class CenterServer {
 	 * @param server
 	 * @return message to manager log
 	 */
-	public String requestRecordCounts(CenterServer server){
+	public String requestRecordCounts(Database server){
 		DatagramSocket aSocket = null;
 		
 		try{
@@ -368,7 +239,6 @@ public class CenterServer {
 	}
 	
 	
-	@Override
 	public String editRecord(String managerId, String recordID, String fieldName, String newValue) throws IOException{
 		this.writeToLog("try to edit record for "+recordID);
 		String output = new String();
@@ -404,7 +274,6 @@ public class CenterServer {
 	}
 	
 
-	@Override
 	public String transferRecord(String managerId, String recordID, String remoteClinicServerName) {
 
 		Iterator it = recordData.entrySet().iterator();
@@ -423,11 +292,10 @@ public class CenterServer {
 							    remoteClinicServerName.equalsIgnoreCase(Location.DDO.toString()))){
 						   if(! remoteClinicServerName.equalsIgnoreCase(this.location.toString())){
 								String output = "Manager: "+ managerId + " change " + recordID +" locaiton to "+ remoteClinicServerName;
-								for(CenterServer server : ServerRunner.serverList){
-									if(server.getLocation() == Location.valueOf(remoteClinicServerName)){
+								for(Database db : server.getDatabaseList()){
+									if(db.getLocation() == Location.valueOf(remoteClinicServerName)){
 										if(record instanceof TeacherRecord) 
-											((TeacherRecord)record).setLocation(remoteClinicServerName);
-								  		requestCreateRecord(server, record, managerId);
+											requestCreateRecord(server, record, managerId);
 								  		listIt.remove();
 								  		recordCount --;
 									}
@@ -479,7 +347,7 @@ public class CenterServer {
 								   newValue = newValue.toUpperCase(); // location are all upper case
 								   ((TeacherRecord)record).setLocation(newValue);
 				        	  		String output = recordID+"'s location is changed to "+((TeacherRecord)record).getLocation().toString();
-				        			for(CenterServer server : ServerRunner.serverList){
+				        			for(Database server : server.getDatabaseList()){
 				        				if(server.getLocation() == Location.valueOf(newValue)){
 						        	  		requestCreateRecord(server, record, managerID);
 						        	  		listIt.remove();
@@ -522,7 +390,7 @@ public class CenterServer {
 	 * @param server
 	 * @param record
 	 */
-	private void requestCreateRecord(CenterServer server, Record record, String managerID) {
+	private void requestCreateRecord(Database server, Record record, String managerID) {
 
 		DatagramSocket aSocket = null;
 		

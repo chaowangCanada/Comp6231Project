@@ -95,12 +95,10 @@ public class ManagerClient {
 			// part of the Interoperable naming Service.  
 			NamingContextExt ncRef = NamingContextExtHelper.narrow(objRef);
 			
-			if(managerID.substring(0, 3).equalsIgnoreCase("mtl")){
-				return DCMSHelper.narrow(ncRef.resolve_str(Location.MTL.toString()));
-			}else if(managerID.substring(0, 3).equalsIgnoreCase("lvl")){
-				return DCMSHelper.narrow(ncRef.resolve_str(Location.LVL.toString()));
-			}else if(managerID.substring(0, 3).equalsIgnoreCase("ddo")){
-				return DCMSHelper.narrow(ncRef.resolve_str(Location.DDO.toString()));
+			if(managerID.substring(0, 3).equalsIgnoreCase("mtl") ||
+			   managerID.substring(0, 3).equalsIgnoreCase("lvl") ||
+			   managerID.substring(0, 3).equalsIgnoreCase("ddo")){
+				return DCMSHelper.narrow(ncRef.resolve_str("chao"));
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
