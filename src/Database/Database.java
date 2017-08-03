@@ -1,4 +1,4 @@
-package Server;
+package Database;
 
 import java.io.File;
 import java.io.FileWriter;

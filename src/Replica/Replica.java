@@ -7,7 +7,7 @@ import java.net.SocketException;
 import java.util.ArrayList;
 
 import Config.PublicParamters.Location;
-import Server.Database;
+import Database.Database;
 
 public class Replica {
 
