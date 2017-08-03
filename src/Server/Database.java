@@ -274,7 +274,7 @@ public class Database {
 	}
 	
 
-	public String transferRecord(String managerId, String recordID, String remoteClinicServerName) {
+	public String transferRecord(String managerId, String recordID, String remoteClinicServerName) throws IOException {
 
 		Iterator it = recordData.entrySet().iterator();
 		while(it.hasNext()){
@@ -295,7 +295,13 @@ public class Database {
 								for(Database db : server.getDatabaseList()){
 									if(db.getLocation() == Location.valueOf(remoteClinicServerName)){
 										if(record instanceof TeacherRecord) 
-											requestCreateRecord(server, record, managerId);
+											db.createTRecord(managerId, record.getFirstName(), record.getLastName(),
+													((TeacherRecord)record).getAddress(), ((TeacherRecord)record).getPhone(), 
+													((TeacherRecord)record).getSpecialization().toString(), db.getLocation().toString());
+										else if(record instanceof StudentRecord) 
+											db.createSRecord(managerId, record.getFirstName(), record.getLastName(),
+													((StudentRecord)record).getCourse(), ((StudentRecord)record).getStatus().toString(), 
+													((StudentRecord)record).getStatusDate());
 								  		listIt.remove();
 								  		recordCount --;
 									}
@@ -344,17 +350,8 @@ public class Database {
 				        	  		return recordID+"'s phone is changed to "+((TeacherRecord)record).getPhone();
 							   }
 							   else if(fieldName.equalsIgnoreCase("location")){
-								   newValue = newValue.toUpperCase(); // location are all upper case
 								   ((TeacherRecord)record).setLocation(newValue);
-				        	  		String output = recordID+"'s location is changed to "+((TeacherRecord)record).getLocation().toString();
-				        			for(Database server : server.getDatabaseList()){
-				        				if(server.getLocation() == Location.valueOf(newValue)){
-						        	  		requestCreateRecord(server, record, managerID);
-						        	  		listIt.remove();
-						        	  		recordCount --;
-				        				}
-				        			}
-				        	  		return output;
+				        	  		return recordID+"'s locaion is changed to " + newValue;
 							   }
 						   } 
 						   else if(RecordInit == 's'){
@@ -384,54 +381,6 @@ public class Database {
 		return "cannot find such record";
 	}
 
-	/**
-	 * socket programming, request to other server to add a record
-	 * record re allocation
-	 * @param server
-	 * @param record
-	 */
-	private void requestCreateRecord(Database server, Record record, String managerID) {
-
-		DatagramSocket aSocket = null;
-		
-		try{
-			aSocket = new DatagramSocket();
-			String recordString  = "";
-		    if(record instanceof TeacherRecord) 
-		    	recordString += "TeacherRecord&"+managerID+"&"+record.getFirstName()+"&"+record.getLastName()+"&"+((TeacherRecord)record).getAddress()+
-		    					"&"+((TeacherRecord)record).getPhone()+"&"+((TeacherRecord)record).getSpecialization().toString()+
-		    					"&"+((TeacherRecord)record).getLocation().toString();
-		    if (record instanceof StudentRecord)
-		    	recordString += "StudentRecord&"+managerID+"&"+record.getFirstName()+"&"+record.getLastName()+"&"+((StudentRecord)record).getCourse()+
-								"&"+((StudentRecord)record).getStatus().toString()+
-								"&"+((StudentRecord)record).getStatusDate();
-		    System.out.println(recordString);
-			byte[] message = recordString.getBytes();
-			InetAddress aHost = InetAddress.getByName("localhost");
-			int serverPort = server.getLocation().getPort();
-			DatagramPacket request = new DatagramPacket(message, message.length, aHost , serverPort);
-			aSocket.send(request);
-			
-			byte[] buffer = new byte[5000];
-			DatagramPacket reply = new DatagramPacket(buffer, buffer.length);
-			aSocket.receive(reply);
-
-			String str = new String(reply.getData(), reply.getOffset(),reply.getLength());
-			System.out.println( str);
-		}
-		catch (SocketException e){
-			System.out.println("Socket"+ e.getMessage());
-		}
-		catch (IOException e){
-			System.out.println("IO: "+e.getMessage());
-		}
-		finally {
-			if(aSocket != null ) 
-				aSocket.close();
-		}
-		
-	}
-	
 	/**
 	 * log file write always needs to be multrual exclusion
 	 * @param str

@@ -83,7 +83,8 @@ public class StudentRecord extends Record{
 	}
 	
 	public String getCourse(){
-		return Arrays.toString(courseList.toArray());
+		return courseList.get(0).toString();
+		//return Arrays.toString(courseList.toArray());
 	}
 	
 	public Status getStatus() {
