@@ -14,10 +14,9 @@ public class Replica {
 	private ArrayList<Database> databaseList ;
 	private Database mtl, lvl, ddo;
 	private int id;
-	public static int id_base = 0;
 
-	public Replica() throws IOException{
-		this.id = ++id_base;
+	public Replica(int id) throws IOException{
+		this.id = id;
 		mtl = new Database(Location.MTL, id, this);
 		lvl = new Database(Location.LVL, id, this);
 		ddo = new Database(Location.DDO, id, this); 

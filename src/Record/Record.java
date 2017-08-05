@@ -1,5 +1,6 @@
 package Record;
 
+import java.io.Serializable;
 
 /**
  * Parent record class, contains shared attributes fn, ln, id
@@ -7,7 +8,7 @@ package Record;
  * @author Chao
  *
  */
-public class Record {
+public class Record implements Serializable{
 
 	protected static int baseID = 10000;  // static base id set
 	private String firstName;

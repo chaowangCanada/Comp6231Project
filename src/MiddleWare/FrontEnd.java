@@ -1,6 +1,10 @@
 package MiddleWare;
 
 import java.io.IOException;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
+import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.Properties;
@@ -19,6 +23,8 @@ import Config.PublicParamters.*;
 import DCMS_CORBA.DCMS;
 import DCMS_CORBA.DCMSHelper;
 import DCMS_CORBA.DCMSPOA;
+import Record.StudentRecord;
+import Record.TeacherRecord;
 import Replica.Replica;
 
 public class FrontEnd extends DCMSPOA{
@@ -29,12 +35,12 @@ public class FrontEnd extends DCMSPOA{
 		private Queue<String> requestQ = new LinkedList<String>();
 		private Stack<String> processStack = new Stack<String>();
 		private ORB orb;
+		private int replicaID_base= 0;
 		
 		public FrontEnd() throws IOException{
-			
-			replica1 = new Replica();
-			replica2 = new Replica();
-			replica3 = new Replica();
+			replica1 = new Replica(++replicaID_base);
+			replica2 = new Replica(++replicaID_base);
+			replica3 = new Replica(++replicaID_base);
 			
 			replicaList.add(replica1);
 			replicaList.add(replica2);
@@ -44,6 +50,62 @@ public class FrontEnd extends DCMSPOA{
 			replica1.openUDPListener();
 			replica2.openUDPListener();
 			replica3.openUDPListener();
+			
+			new ProcessQueueThread(this){
+
+			}.start();		
+		}
+		
+		
+		// thread for while(true) loop, waiting for reply
+		private class ProcessQueueThread extends Thread{
+
+			private Replica replica = null;
+			
+			
+			public ProcessQueueThread(Replica server) {
+				replica = server;
+			}
+			
+			public ProcessQueueThread(FrontEnd frontEnd) {
+				// TODO Auto-generated constructor stub
+			}
+
+			@Override
+			public void run() {
+
+				DatagramSocket aSocket = null;
+				
+				while(!requestQ.isEmpty()){
+					try{
+					aSocket = new DatagramSocket();
+					byte[] message = requestQ.poll().getBytes();
+					InetAddress aHost = InetAddress.getByName("localhost");
+					// ===================================
+					// this part need to be modified to leader port number
+					int serverPort = PublicParamters.SERVER_PORT_REPLICA0;
+					//==========================
+					DatagramPacket request = new DatagramPacket(message, message.length, aHost , serverPort);
+					aSocket.send(request);
+					
+					byte[] buffer = new byte[5000];
+					DatagramPacket reply = new DatagramPacket(buffer, buffer.length);
+					aSocket.receive(reply);
+
+					String str = new String(reply.getData(), reply.getOffset(),reply.getLength());
+					System.out.println( str);
+					}catch (SocketException e){
+						System.out.println("Socket"+ e.getMessage());
+					}
+					catch (IOException e){
+						System.out.println("IO: "+e.getMessage());
+					}
+					finally {
+						if(aSocket != null ) 
+							aSocket.close();
+					}
+				}
+			}
 		}
 
 		/**
@@ -133,18 +195,18 @@ public class FrontEnd extends DCMSPOA{
 		 */
 		@Override
 		public String createSRecord(String managerId, String firstName, String lastName, String courseRegistered,
-				String status, String statusdate) throws IOException {
+				String status, String statusdate) {
 			if(managerId.substring(0, 3).equalsIgnoreCase("mtl")){
 				String request = "mtl|" + "CS" + "|" + managerId + "|"  + firstName + "|" + lastName + "|" + courseRegistered + "|" + status + "|" + statusdate;
-				requestQ_MTL.add(request);
+				requestQ.add(request);
 			}
 			else if(managerId.substring(0, 3).equalsIgnoreCase("lvl")){
 				String request = "lvl|" + "CS" + "|" + managerId + "|"  + firstName + "|" + lastName + "|" + courseRegistered + "|" + status + "|" + statusdate ;
-				requestQ_LVL.add(request);
+				requestQ.add(request);
 			}
 			else if(managerId.substring(0, 3).equalsIgnoreCase("ddo")){
 				String request = "ddo|" + "CS" + "|" + managerId + "|"  + firstName + "|" + lastName + "|" + courseRegistered + "|" + status + "|" + statusdate;
-				requestQ_DDO.add(request);
+				requestQ.add(request);
 			}
 			return "request queued";
 		}
@@ -154,18 +216,18 @@ public class FrontEnd extends DCMSPOA{
 		 * depend on managerID, dicdie to call which center server.
 		 */
 		@Override
-		public String getRecordCounts(String managerId) throws IOException {
+		public String getRecordCounts(String managerId) {
 			if(managerId.substring(0, 3).equalsIgnoreCase("mtl")){
 				String request = "mtl|" + "RC" + "|" + managerId ;
-				requestQ_MTL.add(request);
+				requestQ.add(request);
 			}
 			else if(managerId.substring(0, 3).equalsIgnoreCase("lvl")){
 				String request = "lvl|" + "RC" + "|" + managerId ;
-				requestQ_LVL.add(request);
+				requestQ.add(request);
 			}
 			else if(managerId.substring(0, 3).equalsIgnoreCase("ddo")){
 				String request = "ddo|" + "RC" + "|" + managerId ;
-				requestQ_DDO.add(request);
+				requestQ.add(request);
 			}
 			return "request queued";
 		}
@@ -175,18 +237,18 @@ public class FrontEnd extends DCMSPOA{
 		 * depend on managerID, dicdie to call which center server.
 		 */
 		@Override
-		public String editRecord(String managerId, String recordID, String filedname, String newValue) throws IOException {
+		public String editRecord(String managerId, String recordID, String filedname, String newValue) {
 			if(managerId.substring(0, 3).equalsIgnoreCase("mtl")){
 				String request = "mtl|" + "ER" + "|" + managerId + "|"  + recordID + "|" + filedname + "|" + newValue ;
-				requestQ_MTL.add(request);
+				requestQ.add(request);
 			}
 			else if(managerId.substring(0, 3).equalsIgnoreCase("lvl")){
 				String request = "lvl|" + "ER" + "|" + managerId + "|"  + recordID + "|" + filedname + "|" + newValue ;
-				requestQ_LVL.add(request);
+				requestQ.add(request);
 			}
 			else if(managerId.substring(0, 3).equalsIgnoreCase("ddo")){
 				String request = "ddo|" + "ER" + "|" + managerId + "|"  + recordID + "|" + filedname + "|" + newValue ;
-				requestQ_DDO.add(request);
+				requestQ.add(request);
 			}
 			return "request queued";
 		}
@@ -195,18 +257,18 @@ public class FrontEnd extends DCMSPOA{
 		 * depend on managerID, dicdie to call which center server.
 		 */
 		@Override
-		public String transferRecord(String managerId, String recordID, String remoteCenterServerName) throws IOException {
+		public String transferRecord(String managerId, String recordID, String remoteCenterServerName) {
 			if(managerId.substring(0, 3).equalsIgnoreCase("mtl")){
 				String request = "mtl|" + "TR" + "|" + managerId + "|"  + recordID + "|" + remoteCenterServerName ;
-				requestQ_MTL.add(request);
+				requestQ.add(request);
 			}
 			else if(managerId.substring(0, 3).equalsIgnoreCase("lvl")){
 				String request = "lvl|" + "TR" + "|" + managerId + "|"  + recordID + "|" + remoteCenterServerName ;
-				requestQ_LVL.add(request);
+				requestQ.add(request);
 			}
 			else if(managerId.substring(0, 3).equalsIgnoreCase("ddo")){
 				String request = "ddo|" + "TR" + "|" + managerId + "|"  + recordID + "|" + remoteCenterServerName ;
-				requestQ_DDO.add(request);
+				requestQ.add(request);
 			}
 			return "request queued";
 		}

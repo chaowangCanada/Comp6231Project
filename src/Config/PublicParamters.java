@@ -16,19 +16,10 @@ public interface PublicParamters {
 	 *
 	 */
 	enum Location{
-		MTL(SERVER_PORT_MTL), 
-		LVL(SERVER_PORT_LVL), 
-		DDO(SERVER_PORT_DDO);
-		
-		private int port;
-		
-		Location(int port) {
-	        this.port = port;
-	    }
-	
-	    public int getPort() {
-	        return port;
-	    }
+		MTL, 
+		LVL, 
+		DDO;
+
 	};
 	
 		
@@ -37,9 +28,9 @@ public interface PublicParamters {
 	enum Status {ACTIVE, INACTIVE};
 	
 	// server port cannot be change at run time
-	final int SERVER_PORT_MTL = 7000;
-	final int SERVER_PORT_LVL = 7001;
-	final int SERVER_PORT_DDO = 7002;
+	final int SERVER_PORT_REPLICA0 = 7000;
+	final int SERVER_PORT_REPLICA1 = 7001;
+	final int SERVER_PORT_REPLICA2 = 7002;
 	final String ORB_INITIAL_PORT = "1050";
 	
 	public DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
