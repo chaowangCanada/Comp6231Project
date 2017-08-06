@@ -3,13 +3,16 @@ package Replica;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
+import java.net.InetAddress;
 import java.net.SocketException;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.Stack;
 
+import Config.PublicParamters;
 import Config.PublicParamters.Location;
 import Database.Database;
+import MiddleWare.FrontEnd;
 
 public class Replica {
 
@@ -60,23 +63,68 @@ public class Replica {
 				
 				// 5 types of reply, create student, create teacher, getRecordCount, edit record, move teacher record among server
 				while(true){
-					DatagramPacket request = new DatagramPacket(buffer, buffer.length);
-					aSocket.receive(request);
-					if(request.getData() != null){
-						String requestStr = new String(request.getData(), request.getOffset(),request.getLength());
-						String[] msgArr = requestStr.split("\\|");
-						String replyStr = "";
-						if(msgArr[0].substring(0, 3).equalsIgnoreCase("mtl")){
-							replyStr = executeRequest(msgArr, mtl);
+					// server leader
+					if(server.port == PublicParamters.SERVER_PORT_REPLICA0){
+						DatagramPacket request = new DatagramPacket(buffer, buffer.length);
+						aSocket.receive(request);
+						if(request.getData() != null){
+							String requestStr = new String(request.getData(), request.getOffset(),request.getLength());
+							// front end udp to leader server
+							if(requestStr.contains("|")){
+								String[] msgArr = requestStr.split("\\|");
+								String replyStr = "";
+								boolean areAllServerGood = true;
+								// send msg to member server first
+								for(Replica rplic : FrontEnd.replicaList){
+									if(rplic.getPort() != server.port){
+										areAllServerGood = sendToMember(requestStr, rplic.getPort());
+									}
+								}
+								// member server are all reply
+								if(areAllServerGood){
+									if(msgArr[0].substring(0, 3).equalsIgnoreCase("mtl"))
+										replyStr = executeRequest(msgArr, mtl);
+									else if(msgArr[0].substring(0, 3).equalsIgnoreCase("lvl"))
+										replyStr = executeRequest(msgArr, lvl);
+									else if(msgArr[0].substring(0, 3).equalsIgnoreCase("ddo"))
+										replyStr = executeRequest(msgArr, ddo);
+								}
+								else{
+									replyStr = "One of the replica is down.";
+								}
+								DatagramPacket reply = new DatagramPacket(replyStr.getBytes(),replyStr.getBytes().length, request.getAddress(), request.getPort()); 
+								aSocket.send(reply);								
+							} 
+							// non-leader reply udp to leader server
+							else{
+								
+							}
 						}
-						else if(msgArr[0].substring(0, 3).equalsIgnoreCase("lvl")){
-							replyStr = executeRequest(msgArr, lvl);
+					}
+					// other non leader server
+					else{
+						DatagramPacket request = new DatagramPacket(buffer, buffer.length);
+						aSocket.receive(request);		
+						if(request.getData() != null){
+							String requestStr = new String(request.getData(), request.getOffset(),request.getLength());
+							if(requestStr.contains("|")){
+
+								String[] msgArr = requestStr.split("\\|");
+								String replyStr = "";
+								if(msgArr[0].substring(0, 3).equalsIgnoreCase("mtl")){
+									replyStr = executeRequest(msgArr, mtl);
+								}
+								else if(msgArr[0].substring(0, 3).equalsIgnoreCase("lvl")){
+									replyStr = executeRequest(msgArr, lvl);
+								}
+								else if(msgArr[0].substring(0, 3).equalsIgnoreCase("ddo")){
+									replyStr = executeRequest(msgArr, ddo);
+								}
+								DatagramPacket reply = new DatagramPacket(replyStr.getBytes(),replyStr.getBytes().length, request.getAddress(), request.getPort()); 
+								aSocket.send(reply);
+	
+							}						
 						}
-						else if(msgArr[0].substring(0, 3).equalsIgnoreCase("ddo")){
-							replyStr = executeRequest(msgArr, ddo);
-						}
-						DatagramPacket reply = new DatagramPacket(replyStr.getBytes(),replyStr.getBytes().length, request.getAddress(), request.getPort()); 
-						aSocket.send(reply);
 					}
 				}
 			}catch (IOException e ){System.out.println("Socket"+ e.getMessage());
@@ -100,6 +148,38 @@ public class Replica {
 				return db.transferRecord(msgArr[0], msgArr[2], msgArr[3]);
 			}
 			return "error of request command";
+		}
+		
+		private boolean sendToMember(String msg, int port){
+			DatagramSocket aSocket = null;
+			
+			try{
+				aSocket = new DatagramSocket();
+				byte[] message = msg.getBytes();
+				InetAddress aHost = InetAddress.getByName("localhost");  // since all servers on same machine
+				DatagramPacket request = new DatagramPacket(message, message.length, aHost , port);
+				aSocket.send(request);
+				
+				byte[] buffer = new byte[1000];
+				DatagramPacket reply = new DatagramPacket(buffer, buffer.length);
+				aSocket.receive(reply);
+				String str = new String(reply.getData(), reply.getOffset(),reply.getLength());
+				if(str.isEmpty())
+					return false;
+				return true;
+			}
+			catch (SocketException e){
+				System.out.println("Socket"+ e.getMessage());
+			}
+			catch (IOException e){
+				System.out.println("IO: "+e.getMessage());
+			}
+			finally {
+				if(aSocket != null ) 
+					aSocket.close();
+			}
+			return false;
+			
 		}
 	}
 

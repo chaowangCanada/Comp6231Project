@@ -24,14 +24,14 @@ public class ClientRunner {
 	public static void main(String args[]) throws IOException, NotBoundException{
 		
 //			
-//		ManagerClient mtlManager1 = new ManagerClient(args, Location.MTL);
+		ManagerClient mtlManager1 = new ManagerClient(args, Location.MTL);
 ////		ManagerClient mtlManager2 = new ManagerClient(args, Location.MTL);
 ////		ManagerClient lvlManager1 = new ManagerClient(args, Location.LVL);
 ////		ManagerClient lvlManager2 = new ManagerClient(args,Location.LVL);
 ////		ManagerClient ddoManager1 = new ManagerClient(args,Location.DDO);
 ////		ManagerClient ddoManager2 = new ManagerClient(args,Location.DDO);
 ////
-//		mtlManager1.createSRecord("Student1", "Student1", Course.FRENCH, Status.ACTIVE, "2017-May-1");
+		mtlManager1.createSRecord("Student1", "Student1", Course.FRENCH, Status.ACTIVE, "2017-May-1");
 //		mtlManager1.createTRecord("Teacher1", "Teacher1", "ABC", "123", Specialization.FRENCH , Location.MTL);
 ////		mtlManager2.createSRecord("Student2", "Student2", Course.FRENCH, Status.ACTIVE, "2017-May-1");
 ////		mtlManager2.createTRecord("Teacher2", "Teacher2", "ABC", "123", Specialization.FRENCH , Location.MTL);
@@ -47,11 +47,11 @@ public class ClientRunner {
 ////		ddoManager2.createTRecord("Teacher", "Teacher", "ABC", "123", Specialization.FRENCH , Location.DDO);
 ////		
 ////		
-//		mtlManager1.getRecordCounts();
+		mtlManager1.getRecordCounts();
 ////		mtlManager2.getRecordCounts();
 //		mtlManager1.EditRecord("SR10000", "status date", "2010-01-01");
 //		mtlManager1.EditRecord("TR10001", "address", "ABC 2010");
-//		mtlManager1.transferRecord("SR10000", "LVL");
+		mtlManager1.transferRecord("SR10000", "LVL");
 ////		mtlManager2.EditRecord("TR10001", "address", "SCIENCE");
 ////		
 ////		lvlManager1.getRecordCounts();
@@ -64,7 +64,7 @@ public class ClientRunner {
 ////		ddoManager1.EditRecord("SR10008", "status date", "2010-01-01");
 ////		ddoManager2.createSRecord("Student3", "Student3", Course.FRENCH, Status.ACTIVE, "2017-May-1");
 
-		
+		/*
 		 //TUI menu
 	try{
 		int userChoice=0;
@@ -233,7 +233,7 @@ public class ClientRunner {
 			}
 		}
 		// end of GUI
-		
+		*/
 	
 	}
 

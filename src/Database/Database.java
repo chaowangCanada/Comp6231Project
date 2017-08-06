@@ -50,6 +50,7 @@ public class Database {
 	
 	private File logFile = null;
 	private File objFile = null;
+	private int baseID = 10000;  //  base id set for record 
 	private HashMap<Character, LinkedList<Record>> recordData;  // store Student Record and Teacher Record. Servers doen't share record
 	private Location location;
 	private int recordCount = 0; 
@@ -87,7 +88,7 @@ public class Database {
 							  String phone, String specialization, String location) throws IOException {
 		if(location.equalsIgnoreCase(this.getLocation().toString()) ){
 			this.writeToLog("Manager: "+ managerId + " "+location + " creates Teacher record.");
-			Record tchrRecord = new TeacherRecord(firstName, lastName, address, phone, Specialization.valueOf(specialization), Location.valueOf(location));
+			Record tchrRecord = new TeacherRecord(firstName, lastName, address, phone, Specialization.valueOf(specialization), Location.valueOf(location), baseID++);
 			if(recordData.get(lastName.charAt(0)) == null){
 				recordData.put(lastName.charAt(0), new LinkedList<Record>());
 			}
@@ -114,7 +115,7 @@ public class Database {
 	public String createSRecord(String managerId, String firstName, String lastName, String courseRegistered, 
 								String status, String statusdate) throws IOException{
 		this.writeToLog("Manager: "+ managerId + " "+ location.toString() + " creates Student record.");
-		Record studntRecord = new StudentRecord(firstName, lastName, Course.valueOf(courseRegistered), Status.valueOf(status), statusdate);
+		Record studntRecord = new StudentRecord(firstName, lastName, Course.valueOf(courseRegistered), Status.valueOf(status), statusdate, baseID++);
 		if(recordData.get(lastName.charAt(0)) == null){
 			recordData.put(lastName.charAt(0), new LinkedList<Record>());
 		}
@@ -359,6 +360,7 @@ public class Database {
 				}
 				recordData.get(tmp.getLastName().charAt(0)).add(tmp);
 				this.recordCount ++;
+				this.baseID++;
 	        }
 	    } catch (Exception e) {
 	    } finally {

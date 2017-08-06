@@ -31,7 +31,7 @@ import Replica.Replica;
 
 public class FrontEnd extends DCMSPOA{
 
-		public  ArrayList<Replica> replicaList = new ArrayList<Replica>();
+		public static  ArrayList<Replica> replicaList = new ArrayList<Replica>();
 		private Replica replica1, replica2, replica3;
 		private Queue<String> requestQ = new LinkedList<String>();
 		private Stack<SimpleEntry<String, String>> processedRequest = new Stack<SimpleEntry<String, String>>();

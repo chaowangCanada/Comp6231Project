@@ -28,7 +28,7 @@ public interface PublicParamters {
 	enum Status {ACTIVE, INACTIVE};
 	
 	// server port cannot be change at run time
-	final int SERVER_PORT_REPLICA0 = 7000;
+	final int SERVER_PORT_REPLICA0 = 7000;  //leader port
 	final int SERVER_PORT_REPLICA1 = 7001;
 	final int SERVER_PORT_REPLICA2 = 7002;
 	final String ORB_INITIAL_PORT = "1050";

@@ -23,9 +23,18 @@ public class TeacherRecord extends Record{
 		this("N/A", "N/A");
 	}
 
-	public TeacherRecord(String firstName, String lastName, String address, String phone,Specialization special, Location loc) {
+//	public TeacherRecord(String firstName, String lastName, String address, String phone,Specialization special, Location loc) {
+//		super(firstName, lastName);
+//		this.recordID = "TR"+Integer.toString(Record.baseID++);
+//        this.address = address;
+//        this.phone = phone;
+//        this.specialization = special;
+//        this.location = loc;
+//	}
+	
+	public TeacherRecord(String firstName, String lastName, String address, String phone,Specialization special, Location loc, int id) {
 		super(firstName, lastName);
-		this.recordID = "TR"+Integer.toString(Record.baseID++);
+		this.recordID = "TR"+Integer.toString(id);
         this.address = address;
         this.phone = phone;
         this.specialization = special;

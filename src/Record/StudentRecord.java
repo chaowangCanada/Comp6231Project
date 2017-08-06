@@ -19,9 +19,18 @@ public class StudentRecord extends Record{
 	private String statusDate;
 
 	// student only can add course through editRecord()
-	public StudentRecord(String firstName, String lastName, Course course, Status stat, String date) {
+//	public StudentRecord(String firstName, String lastName, Course course, Status stat, String date) {
+//		super(firstName, lastName);
+//		this.recordID = "SR"+Integer.toString(Record.baseID++);
+//        this.statusDate = date;
+//        this.courseList = new ArrayList<Course>();  //student can register more than 1 course
+//        this.courseList.add(course);
+//        this.status = stat;
+//	}
+	
+	public StudentRecord(String firstName, String lastName, Course course, Status stat, String date, int id) {
 		super(firstName, lastName);
-		this.recordID = "SR"+Integer.toString(Record.baseID++);
+		this.recordID = "SR"+Integer.toString(id);
         this.statusDate = date;
         this.courseList = new ArrayList<Course>();  //student can register more than 1 course
         this.courseList.add(course);
