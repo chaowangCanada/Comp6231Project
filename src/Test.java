@@ -20,6 +20,13 @@ public class Test {
 		db.createSRecord("abc", "chao", "wang", "FRENCH", "ACTIVE", "2010");
 		db.createSRecord("def", "ruiid", "yangtao", "FRENCH", "INACTIVE", "2011");
 
+		
+		
+		String str = "mtl1000|abc";
+		String[] arr = str.split("\\|");
+		
+		System.out.println(str.substring(0,3));
+		
 //		Record rc = new TeacherRecord("chao", "wang", "address","123", PublicParamters.Specialization.FRENCH, Location.DDO );
 //		File fl = new File("DDO0.tmp");
 //		FileOutputStream fos = new FileOutputStream(fl);
@@ -33,11 +40,11 @@ public class Test {
 //	    Record tmp = (Record)ois.readObject();
 		
 //		======================================================
-		db.writeWholeDB();
-		db.restoreDB();
-		for(LinkedList<Record> list : db.getRecordData().values())
-			for(Record rc : list)
-				System.out.println(((StudentRecord)rc).getStatus());
+//		db.writeWholeDB();
+//		db.restoreDB();
+//		for(LinkedList<Record> list : db.getRecordData().values())
+//			for(Record rc : list)
+//				System.out.println(((StudentRecord)rc).getStatus());
 				
 	}
 

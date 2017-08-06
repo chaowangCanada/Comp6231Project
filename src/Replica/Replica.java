@@ -4,7 +4,9 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.SocketException;
+import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
+import java.util.Stack;
 
 import Config.PublicParamters.Location;
 import Database.Database;
@@ -13,10 +15,11 @@ public class Replica {
 
 	private ArrayList<Database> databaseList ;
 	private Database mtl, lvl, ddo;
-	private int id;
+	private int id, port;
 
-	public Replica(int id) throws IOException{
+	public Replica(int id, int port) throws IOException{
 		this.id = id;
+		this.port = port;
 		mtl = new Database(Location.MTL, id, this);
 		lvl = new Database(Location.LVL, id, this);
 		ddo = new Database(Location.DDO, id, this); 
@@ -51,44 +54,52 @@ public class Replica {
 		@Override
 		public void run() {
 			DatagramSocket aSocket = null;
+			try {
+				aSocket  = new DatagramSocket(port);
+				byte[] buffer = new byte[1000];
+				
+				// 5 types of reply, create student, create teacher, getRecordCount, edit record, move teacher record among server
+				while(true){
+					DatagramPacket request = new DatagramPacket(buffer, buffer.length);
+					aSocket.receive(request);
+					if(request.getData() != null){
+						String requestStr = new String(request.getData(), request.getOffset(),request.getLength());
+						String[] msgArr = requestStr.split("\\|");
+						String replyStr = "";
+						if(msgArr[0].substring(0, 3).equalsIgnoreCase("mtl")){
+							replyStr = executeRequest(msgArr, mtl);
+						}
+						else if(msgArr[0].substring(0, 3).equalsIgnoreCase("lvl")){
+							replyStr = executeRequest(msgArr, lvl);
+						}
+						else if(msgArr[0].substring(0, 3).equalsIgnoreCase("ddo")){
+							replyStr = executeRequest(msgArr, ddo);
+						}
+						DatagramPacket reply = new DatagramPacket(replyStr.getBytes(),replyStr.getBytes().length, request.getAddress(), request.getPort()); 
+						aSocket.send(reply);
+					}
+				}
+			}catch (IOException e ){System.out.println("Socket"+ e.getMessage());
+			}finally { if (aSocket !=null ) aSocket.close();}
+		}
 
-//			try {
-//				aSocket  = new DatagramSocket(server.location.getPort());
-//				byte[] buffer = new byte[1000];
-//				
-//				// 3 types of reply, getRecordCount, move Student Record among server, move teacher record among server
-//				while(true){
-//					DatagramPacket request = new DatagramPacket(buffer, buffer.length);
-//					aSocket.receive(request);
-//					if(request.getData() != null){
-//						String requestStr = new String(request.getData(), request.getOffset(),request.getLength());
-//						if(requestStr.equalsIgnoreCase("RecordCounts")){ 
-//							server.writeToLog("Receive UDP message for : "+ requestStr );
-//							recordCount = Integer.toString(server.recordCount);
-//							DatagramPacket reply = new DatagramPacket(recordCount.getBytes(),recordCount.getBytes().length, request.getAddress(), request.getPort()); 
-//							aSocket.send(reply);
-//						}
-//						else if (requestStr.substring(0, 13).equalsIgnoreCase("TeacherRecord")){
-//							server.writeToLog("Receive UDP message for creating : "+ requestStr.substring(0, 13));
-//							String[] info = requestStr.split("&");
-//							server.createTRecord(info[1], info[2], info[3], info[4], info[5], info[6], info[7]);
-//							String replyStr = "Successfully create Teatcher Record";
-//							DatagramPacket reply = new DatagramPacket(replyStr.getBytes(),replyStr.getBytes().length, request.getAddress(), request.getPort()); 
-//							aSocket.send(reply);
-//						}
-//						else if (requestStr.substring(0, 13).equalsIgnoreCase("StudentRecord")){
-//							server.writeToLog("Receive UDP message for creating : "+ requestStr.substring(0, 13));
-//							String[] info = requestStr.split("&");
-//							server.createSRecord(info[1], info[2], info[3], info[4].replaceAll("\\[", "").replaceAll("\\]",""), info[5], info[6]);
-//							String replyStr = "Successfully create Student Record";
-//							DatagramPacket reply = new DatagramPacket(replyStr.getBytes(),replyStr.getBytes().length, request.getAddress(), request.getPort()); 
-//							aSocket.send(reply);
-//						}
-//					}
-//				}
-//			}catch (SocketException e ){System.out.println("Socket"+ e.getMessage());
-//			}catch (IOException e) {System.out.println("IO"+e.getMessage());
-//			}finally { if (aSocket !=null ) aSocket.close();}
+		private String executeRequest(String[] msgArr, Database db) throws IOException {
+			if(msgArr[1].equalsIgnoreCase("CT")){
+				return db.createTRecord(msgArr[0], msgArr[2], msgArr[3], msgArr[4], msgArr[5], msgArr[6], msgArr[7]);
+			}
+			else if(msgArr[1].equalsIgnoreCase("CS")){
+				return db.createSRecord(msgArr[0], msgArr[2], msgArr[3], msgArr[4], msgArr[5], msgArr[6]);
+			}
+			else if(msgArr[1].equalsIgnoreCase("RC")){
+				return db.getRecordCounts(msgArr[0]);
+			}
+			else if(msgArr[1].equalsIgnoreCase("ER")){
+				return db.editRecord(msgArr[0], msgArr[2], msgArr[3], msgArr[4]);
+			}
+			else if(msgArr[1].equalsIgnoreCase("TR")){
+				return db.transferRecord(msgArr[0], msgArr[2], msgArr[3]);
+			}
+			return "error of request command";
 		}
 	}
 
@@ -99,6 +110,26 @@ public class Replica {
 
 	public void setDatabaseList(ArrayList<Database> databaseList) {
 		this.databaseList = databaseList;
+	}
+
+
+	public int getId() {
+		return id;
+	}
+
+
+	public void setId(int id) {
+		this.id = id;
+	}
+
+
+	public int getPort() {
+		return port;
+	}
+
+
+	public void setPort(int port) {
+		this.port = port;
 	}
 
 	

@@ -64,6 +64,7 @@ public class ClientRunner {
 ////		ddoManager1.EditRecord("SR10008", "status date", "2010-01-01");
 ////		ddoManager2.createSRecord("Student3", "Student3", Course.FRENCH, Status.ACTIVE, "2017-May-1");
 
+		
 		 //TUI menu
 	try{
 		int userChoice=0;
@@ -230,7 +231,10 @@ public class ClientRunner {
 					System.out.println("Invalid Input, please try again.");
 					
 			}
-		}	
+		}
+		// end of GUI
+		
+	
 	}
 
 }

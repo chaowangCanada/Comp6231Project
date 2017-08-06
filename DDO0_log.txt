@@ -1,4 +1,0 @@
-2017/08/05 09:26:42 : Manager: abc DDO creates Student record.
-2017/08/05 09:26:42 : Manager: abc Sucessfully write Student record. Record ID: SR10000
-2017/08/05 09:26:42 : Manager: def DDO creates Student record.
-2017/08/05 09:26:42 : Manager: def Sucessfully write Student record. Record ID: SR10001

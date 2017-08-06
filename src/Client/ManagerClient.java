@@ -82,11 +82,11 @@ public class ManagerClient {
 	private DCMS getServerReferrence(String[] args, String managerID){
 		try {
 			//initial the port number of 1050;
-			Properties props = new Properties();
-	        props.put("org.omg.CORBA.ORBInitialPort", PublicParamters.ORB_INITIAL_PORT);
-	        
+//			Properties props = new Properties();
+//	        props.put("org.omg.CORBA.ORBInitialPort", PublicParamters.ORB_INITIAL_PORT);
+//	        
 			// create and initialize the ORB
-			ORB orb = ORB.init(args, props);
+			ORB orb = ORB.init(args, null);
 
 			// get the root naming context
 			org.omg.CORBA.Object objRef = orb.resolve_initial_references("NameService");

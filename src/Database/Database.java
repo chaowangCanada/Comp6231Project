@@ -93,7 +93,7 @@ public class Database {
 			}
 			synchronized(recordData.get(lastName.charAt(0))){ // linked list is not thread safe, need to lock avoid race condition
 				if(recordData.get(lastName.charAt(0)).add(tchrRecord)){
-					String output = "Manager: "+ managerId + " sucessfully write Teacher record. Record ID: "+tchrRecord.getRecordID();
+					String output = managerId + "|sucessfully write Teacher record. Record ID: "+tchrRecord.getRecordID();
 					this.writeToLog(output);
 			  		// append to obj file list. since new record, order does not matter.
 					appendDB(tchrRecord);
@@ -120,7 +120,7 @@ public class Database {
 		}
 		synchronized(recordData.get(lastName.charAt(0))){ // linked list is not thread safe, need to lock avoid race condition
 			if(recordData.get(lastName.charAt(0)).add(studntRecord)){
-				String output = "Manager: "+ managerId + " Sucessfully write Student record. Record ID: "+studntRecord.getRecordID();
+				String output = managerId + "|Sucessfully write Student record. Record ID: "+studntRecord.getRecordID();
 				this.writeToLog(output);
 				recordCount++;
 		  		// append to obj file list. since new record, order does not matter.
@@ -140,7 +140,7 @@ public class Database {
 	 */
 	public String getRecordCounts(String managerId) throws IOException{
 		this.writeToLog("try to count all record at "+ location.toString());
-		String output = this.location.toString() + " " + recordCount + ", ";
+		String output = managerId + "|" + this.location.toString() + " " + recordCount + ", ";
 		if(server.getDatabaseList().size() ==1 ){
 			return output;
 		}
@@ -163,7 +163,7 @@ public class Database {
 			if(fieldName.equalsIgnoreCase("address")||
 					fieldName.equalsIgnoreCase("phone")||
 					fieldName.equalsIgnoreCase("location")){
-				output= traverseToEdit(recordID, fieldName, newValue, 't', managerId); // t means teacher record
+				output= traverseToEdit(managerId, recordID, fieldName, newValue, 't', managerId); // t means teacher record
 				this.writeToLog(output);
 		  		// rewrite all to obj file. Since, cannot track edit record
 		  		writeWholeDB();
@@ -175,7 +175,7 @@ public class Database {
 			if(fieldName.equalsIgnoreCase("course")||
 					fieldName.equalsIgnoreCase("status")||
 					fieldName.equalsIgnoreCase("status Date")){
-				output = traverseToEdit(recordID, fieldName, newValue, 's', managerId); // s means student record
+				output = traverseToEdit(managerId, recordID, fieldName, newValue, 's', managerId); // s means student record
 				this.writeToLog(output);
 			}
 			else{
@@ -208,7 +208,7 @@ public class Database {
 									   remoteDBname.equalsIgnoreCase(Location.LVL.toString()) ||
 									   remoteDBname.equalsIgnoreCase(Location.DDO.toString()))){
 						   if(! remoteDBname.equalsIgnoreCase(this.location.toString())){
-								String output = "Manager: "+ managerId + " change " + recordID +" locaiton to "+ remoteDBname;
+								String output = managerId + "| change " + recordID +" locaiton to "+ remoteDBname;
 								for(Database db : server.getDatabaseList()){
 									if(db.getLocation() == Location.valueOf(remoteDBname)){
 										if(record instanceof TeacherRecord) 
@@ -247,7 +247,7 @@ public class Database {
 	 * @param RecordInit
 	 * @return
 	 */
-	private String traverseToEdit(String recordID, String fieldName, String newValue, char RecordInit, String managerID) {
+	private String traverseToEdit(String managerId, String recordID, String fieldName, String newValue, char RecordInit, String managerID) {
 		Iterator it = recordData.entrySet().iterator();
 		while(it.hasNext()){
 			   Entry entry = (Entry) it.next();
@@ -262,31 +262,31 @@ public class Database {
 						   if(RecordInit == 't'){
 							   if(fieldName.equalsIgnoreCase("address")){
 								   ((TeacherRecord)record).setAddress(newValue);
-				        	  		return recordID+"'s address is changed to "+((TeacherRecord)record).getAddress();
+				        	  		return managerId +"|"+recordID+"'s address is changed to "+((TeacherRecord)record).getAddress();
 							   } 
 							   else if(fieldName.equalsIgnoreCase("phone")){
 								   ((TeacherRecord)record).setPhone(newValue);
-				        	  		return recordID+"'s phone is changed to "+((TeacherRecord)record).getPhone();
+				        	  		return managerId +"|"+recordID+"'s phone is changed to "+((TeacherRecord)record).getPhone();
 							   }
 							   else if(fieldName.equalsIgnoreCase("location")){
 								   ((TeacherRecord)record).setLocation(newValue);
-				        	  		return recordID+"'s locaion is changed to " + newValue;
+				        	  		return managerId +"|"+recordID+"'s locaion is changed to " + newValue;
 							   }
 						   } 
 						   else if(RecordInit == 's'){
 							   if(fieldName.equalsIgnoreCase("course")){
 								   newValue = newValue.toUpperCase(); // course, status are all upper case
 								   ((StudentRecord)record).editCourse(newValue);
-				        	  		return recordID+"'s course is changed to "+((StudentRecord)record).getCourse();
+				        	  		return managerId +"|"+recordID+"'s course is changed to "+((StudentRecord)record).getCourse();
 							   } 
 							   else if(fieldName.equalsIgnoreCase("status")){
 								   newValue = newValue.toUpperCase(); // course, status are all upper case
 								   ((StudentRecord)record).setStatus(newValue);
-				        	  		return recordID+"'s status is changed to "+((StudentRecord)record).getStatus().toString();
+				        	  		return managerId +"|"+recordID+"'s status is changed to "+((StudentRecord)record).getStatus().toString();
 							   }
 							   else if(fieldName.equalsIgnoreCase("status date")){
 								   ((StudentRecord)record).setStatusDate(newValue);
-				        	  		return recordID+"'s status date is changed to "+((StudentRecord)record).getStatusDate();   
+				        	  		return managerId +"|"+recordID+"'s status date is changed to "+((StudentRecord)record).getStatusDate();   
 							   }
 						   }
 						   else{

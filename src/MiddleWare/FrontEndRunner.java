@@ -7,7 +7,6 @@ public class FrontEndRunner {
 		FrontEnd fe = new FrontEnd();
 		
 		fe.deploy(args);
-		System.out.println("Servers are up and running ");
 
 
 	}
