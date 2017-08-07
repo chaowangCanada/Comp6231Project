@@ -31,33 +31,35 @@ import Replica.Replica;
 
 public class FrontEnd extends DCMSPOA{
 
+		public static int replicaID_base= 0;
 		public static  ArrayList<Replica> replicaList = new ArrayList<Replica>();
 		private Replica replica1, replica2, replica3;
 		private Queue<String> requestQ = new LinkedList<String>();
 		private Stack<SimpleEntry<String, String>> processedRequest = new Stack<SimpleEntry<String, String>>();
 		private ORB orb;
-		private int replicaID_base= 0;
+		//private int replicaID_base= 0;
 		private int leaderPort;
 		
 		public FrontEnd() throws IOException{
-			replica1 = new Replica(++replicaID_base, PublicParamters.SERVER_PORT_REPLICA0);
-			replica2 = new Replica(++replicaID_base, PublicParamters.SERVER_PORT_REPLICA1);
-			replica3 = new Replica(++replicaID_base, PublicParamters.SERVER_PORT_REPLICA2);
-			
-			replicaList.add(replica1);
-			replicaList.add(replica2);
-			replicaList.add(replica3);
-			
-			for(Replica rp : replicaList){
-				if(rp.getId() == 1){
-					leaderPort = rp.getPort();
-				}
-			}
-			
-			// UDP waiting request thread
-			replica1.openUDPListener();
-			replica2.openUDPListener();
-			replica3.openUDPListener();
+			leaderPort = PublicParamters.SERVER_PORT_REPLICA0;
+//			replica1 = new Replica(++replicaID_base, PublicParamters.SERVER_PORT_REPLICA0);
+//			replica2 = new Replica(++replicaID_base, PublicParamters.SERVER_PORT_REPLICA1);
+//			replica3 = new Replica(++replicaID_base, PublicParamters.SERVER_PORT_REPLICA2);
+//			
+//			replicaList.add(replica1);
+//			replicaList.add(replica2);
+//			replicaList.add(replica3);
+//			
+//			for(Replica rp : replicaList){
+//				if(rp.getId() == 1){
+//					leaderPort = rp.getPort();
+//				}
+//			}
+//			
+//			// UDP waiting request thread
+//			replica1.openUDPListener();
+//			replica2.openUDPListener();
+//			replica3.openUDPListener();
 //			
 //			new ProcessQueueThread(this){
 //			}.start();		

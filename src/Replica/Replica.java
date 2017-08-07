@@ -40,7 +40,8 @@ public class Replica {
 		new UDPListenerThread(this){
 
 		}.start();
-
+		
+		System.out.println("server @" +port +" is up.");
 	}
 	
 	// thread for while(true) loop, waiting for reply
@@ -75,9 +76,14 @@ public class Replica {
 								String replyStr = "";
 								boolean areAllServerGood = true;
 								// send msg to member server first
-								for(Replica rplic : FrontEnd.replicaList){
-									if(rplic.getPort() != server.port){
-										areAllServerGood = sendToMember(requestStr, rplic.getPort());
+//								for(Replica rplic : FrontEnd.replicaList){
+//									if(rplic.getPort() != server.port){
+//										areAllServerGood = sendToMember(requestStr, rplic.getPort());
+//									}
+//								}
+								for(int port : PublicParamters.SERVER_PORT_ARR){
+								if(port != server.port){
+									areAllServerGood = sendToMember(requestStr, port);
 									}
 								}
 								// member server are all reply

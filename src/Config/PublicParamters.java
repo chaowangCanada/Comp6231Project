@@ -31,6 +31,7 @@ public interface PublicParamters {
 	final int SERVER_PORT_REPLICA0 = 7000;  //leader port
 	final int SERVER_PORT_REPLICA1 = 7001;
 	final int SERVER_PORT_REPLICA2 = 7002;
+	final int[] SERVER_PORT_ARR = new int[] {SERVER_PORT_REPLICA0, SERVER_PORT_REPLICA1, SERVER_PORT_REPLICA2};
 	final String ORB_INITIAL_PORT = "1050";
 	
 	public DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
