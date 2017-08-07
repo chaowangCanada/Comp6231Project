@@ -1,3 +1,0 @@
-2017/08/06 22:25:04 : MTL1000|Sucessfully write Student record. Record ID: SR10000
-2017/08/06 22:25:04 : MTL1000|MTL 1, LVL 0,DDO 0,
-2017/08/06 22:25:04 : MTL1000| change SR10000 locaiton to LVL

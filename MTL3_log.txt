@@ -1,3 +1,0 @@
-2017/08/06 22:25:03 : Manager: MTL1000 MTL creates Student record.
-2017/08/06 22:25:04 : MTL1000|Sucessfully write Student record. Record ID: SR10000
-2017/08/06 22:25:04 : try to count all record at MTL
