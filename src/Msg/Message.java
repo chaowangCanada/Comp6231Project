@@ -3,7 +3,7 @@ package Msg;
 import java.io.Serializable;
 
 public class Message implements Serializable {
-    public long num;
+    public int num;
     public String msg;
     
     public Message(){

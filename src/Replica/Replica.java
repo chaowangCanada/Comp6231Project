@@ -41,7 +41,7 @@ public class Replica {
 	private int leaderFEPort = 0;
 	private int leaderSCPort = 0;
     private InetAddress    addr  = null ; 
-    private DatagramSocket psock;
+    //private DatagramSocket psock;
     private MulticastSocket sock;
 
 	public Replica(int id, int FrontEndPort, int betweenPort) throws IOException{
@@ -63,7 +63,7 @@ public class Replica {
 		}
 		countDif = 0;
 		addr = InetAddress.getByName("224.0.0.4");
-		psock = new DatagramSocket(SCport);
+		//psock = new DatagramSocket(SCport);
         sock = new MulticastSocket(PublicParamters.GROUP_PORT);
 		leaderFEPort = PublicParamters.SERVER_PORT_FEND2;
 		leaderSCPort = PublicParamters.SERVER_PORT_FEND2;
@@ -79,7 +79,7 @@ public class Replica {
         
         // uni cast
 
-		this.sendHeartBeat(sock, psock, addr);
+		this.sendHeartBeat(sock, addr);
  
 		//this.logFailureFlag();
 				
@@ -105,11 +105,12 @@ public class Replica {
 //	            	System.out.print(pair.getKey()+" : "+pair.getValue()+"; ");
 //	            }
 //	            System.out.println();
-		    	if(countDif > 5){
+		    	if(countDif > 2){
 		    		DatagramSocket aSocket = null; 
 		            try {
 		            	aSocket = new DatagramSocket();
-		                DatagramPacket pkt = DatagramHelper.encodeMessage(new ConfirmShutDownMessage(resetPort), addr, talkPort);
+		        	    InetAddress IPAddress = InetAddress.getByName("localhost");
+		                DatagramPacket pkt = DatagramHelper.encodeMessage(new ConfirmShutDownMessage(resetPort), IPAddress, talkPort);
 						aSocket.send(pkt);
 					
 			            DatagramPacket packet = new DatagramPacket(new byte[8192], 8192);
@@ -126,13 +127,14 @@ public class Replica {
 							aSocket.close();
 		            }
 		    	}
-		    	else if( countDif < -5){
+		    	else if( countDif <-2){
 		    		DatagramSocket aSocket = null; 
 		            try {
 		            	aSocket = new DatagramSocket();
-		                DatagramPacket pkt = DatagramHelper.encodeMessage(new ConfirmShutDownMessage(talkPort), addr, resetPort);
+		        	    InetAddress IPAddress = InetAddress.getByName("localhost");
+		                DatagramPacket pkt = DatagramHelper.encodeMessage(new ConfirmShutDownMessage(talkPort), IPAddress, resetPort);
 						aSocket.send(pkt);
-					
+
 			            DatagramPacket packet = new DatagramPacket(new byte[8192], 8192);
 						aSocket.receive(packet);
 		                Message message      = DatagramHelper.decodeMessage(packet);
@@ -155,9 +157,59 @@ public class Replica {
 		Timer timer = new Timer();
 		timer.schedule(new FailureChecker(), 0, 5000);
     	
-		receiveMulticastMsg(sock, psock, addr, this.SCport);
-		receiveUnicastMsg(sock, psock, addr, this.SCport);
+		receiveMulticastMsg(sock, addr, this.SCport);
+		
+		
+		//receiveUnicastMsg(  addr, this.SCport);
 
+		DatagramSocket pSock = null;
+
+    	try{
+    		pSock =new DatagramSocket(SCport);
+        	while (true) {
+	            DatagramPacket packet = new DatagramPacket(new byte[8192], 8192);
+	            pSock.receive(packet);
+                Message message      = DatagramHelper.decodeMessage(packet);
+                if( message instanceof ConfirmShutDownMessage){
+                	int resetPort = message.num;
+                	int resetPortCount = receiveCount.get(resetPort);
+                	int talkPort = 0;
+                	for(int i : receiveCount.keySet()){
+                		if(i != resetPort && i != SCport)
+                			talkPort = i;
+                	}
+                	int diff = receiveCount.get(talkPort) - resetPortCount;
+                	if(diff >2 || diff < -2){
+                		System.out.println("Confirm shut down of " + message.num);
+	                	resetReceiveCount();
+		                DatagramPacket reply = DatagramHelper.encodeMessage(new ShutDownAcknowledge((int) message.num), addr, packet.getPort());
+		                pSock.send(reply);	
+						if((int) message.num == leaderSCPort){
+							initialSelection(SCport, pSock);
+						}
+                	}
+                	else{
+		                DatagramPacket reply = DatagramHelper.encodeMessage(new Message(), addr, packet.getPort());
+		                pSock.send(reply);	
+                	}
+                }
+                else if( message instanceof ElectionMessage){
+	                DatagramPacket reply = DatagramHelper.encodeMessage(new AliveMessage(SCport), addr, packet.getPort());
+	                pSock.send(reply);	
+                	initialSelection(SCport, pSock);
+                }
+                else if( message instanceof AliveMessage){
+                	// wait, do not send election message again
+
+                }
+        	}
+                // wait certain time , if no alive message, send victory message.
+    	}catch(Exception e){
+    		e.printStackTrace();
+        }finally{
+        	pSock.close();
+        }
+	
         //sock.leaveGroup(addr);
     }
 
@@ -170,13 +222,14 @@ public class Replica {
     }
 
     
-    public void sendHeartBeat(MulticastSocket mSock, DatagramSocket dSock, InetAddress groupAddr) throws IOException, ClassCastException, ClassNotFoundException {
+    public void sendHeartBeat(MulticastSocket mSock, InetAddress groupAddr) throws IOException, ClassCastException, ClassNotFoundException {
         Timer timer = new Timer();
-        Heartbeater beater = new Heartbeater(dSock, groupAddr, receiveCount);
+        DatagramSocket sock = DatagramHelper.getDatagramSocket();
+        Heartbeater beater = new Heartbeater(sock, groupAddr, this.SCport);
         timer.schedule(beater, 1000, 5000);
     }
     
-    public void receiveMulticastMsg(MulticastSocket mSock, DatagramSocket dSock, InetAddress groupAddr, int portNum) throws IOException, ClassNotFoundException{
+    public void receiveMulticastMsg(MulticastSocket mSock, InetAddress groupAddr, int portNum) throws IOException, ClassNotFoundException{
     	new Thread(new Runnable(){
 
 			@Override
@@ -189,10 +242,10 @@ public class Replica {
 			            Message message       = DatagramHelper.decodeMessage(packet);
 			            if (message instanceof HeartbeatMessage) {
 			                //System.out.printf("receive %s: %s\n", packet.getSocketAddress(), message);
-			            	int portTmp = packet.getPort();
-			                if(portTmp != portNum){
+			            	int portTmp = message.num;
+			                if(message.num != portNum){
 			                	int count = receiveCount.get(portTmp);
-			                	receiveCount.put(packet.getPort(), ++count);
+			                	receiveCount.put(portTmp, ++count);
 			                }
 			            } 
 			            else if (message instanceof VictoryMessage) {
@@ -213,48 +266,51 @@ public class Replica {
 
     }
     
-    public void receiveUnicastMsg(MulticastSocket mSock, DatagramSocket sock, InetAddress groupAddr, int portNum) throws IOException, ClassNotFoundException{
+    public void receiveUnicastMsg(InetAddress groupAddr, int portNum) throws IOException, ClassNotFoundException{
     	new Thread(new Runnable(){
 			@Override
 			public void run() {
+        		DatagramSocket pSock = null;
 
-		        while (true) {
-		        	try{
+	        	try{
+	        		pSock =new DatagramSocket(SCport);
+		        	while (true) {
 			            DatagramPacket packet = new DatagramPacket(new byte[8192], 8192);
-			            psock.receive(packet);
-		                Message message = DatagramHelper.decodeMessage(packet);
+			            pSock.receive(packet);
+		                Message message      = DatagramHelper.decodeMessage(packet);
 		                if( message instanceof ConfirmShutDownMessage){
 		                	int talkPort = packet.getPort();
 		                	int talkPortCount = receiveCount.get(talkPort);
 		                	int diff = receiveCount.get(message.num) - talkPortCount;
-		                	if(diff >5 || diff < -5){
+		                	if(diff >2 || diff < -2){
 		                		System.out.println("Confirm shut down of " + message.num);
 			                	resetReceiveCount();
 				                DatagramPacket reply = DatagramHelper.encodeMessage(new ShutDownAcknowledge((int) message.num), addr, packet.getPort());
-				                psock.send(reply);	
+				                pSock.send(reply);	
 								if((int) message.num == leaderSCPort){
-									initialSelection(portNum);
+									initialSelection(portNum, pSock);
 								}
 		                	}
 		                	else{
 				                DatagramPacket reply = DatagramHelper.encodeMessage(new Message(), addr, packet.getPort());
-				                psock.send(reply);	
+				                pSock.send(reply);	
 		                	}
 		                }
 		                else if( message instanceof ElectionMessage){
 			                DatagramPacket reply = DatagramHelper.encodeMessage(new AliveMessage(portNum), addr, packet.getPort());
-			                psock.send(reply);	
-		                	initialSelection(portNum);
+			                pSock.send(reply);	
+		                	initialSelection(portNum, pSock);
 		                }
 		                else if( message instanceof AliveMessage){
 		                	// wait, do not send election message again
 
 		                }
-		                
-		                // wait certain time , if no alive message, send victory message.
-		        	}catch(Exception e){
-		        		e.printStackTrace();
 		        	}
+		                // wait certain time , if no alive message, send victory message.
+	        	}catch(Exception e){
+	        		e.printStackTrace();
+		        }finally{
+		        	pSock.close();
 		        }
 			}
     		
@@ -262,7 +318,7 @@ public class Replica {
     }
     
 
-	public void initialSelection(int portNum) throws IOException {
+	public void initialSelection(int portNum, DatagramSocket sock) throws IOException {
 		if(this.SCport == PublicParamters.SERVER_PORT_REPLICA2 -1){
 			System.out.println(this.SCport + " is victory");
 	        DatagramPacket pkt = DatagramHelper.encodeMessage(new VictoryMessage(this.SCport), addr, PublicParamters.GROUP_PORT);
@@ -273,7 +329,7 @@ public class Replica {
 		else{
 			for (int i = this.SCport; i < leaderSCPort; i++){
 	            DatagramPacket pkt = DatagramHelper.encodeMessage(new ElectionMessage(this.SCport), addr, i);
-	            psock.send(pkt);
+	            sock.send(pkt);
 			}
 
 		}

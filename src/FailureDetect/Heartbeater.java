@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.net.SocketException;
 import java.util.HashMap;
 import java.util.TimerTask;
 
@@ -12,21 +13,20 @@ import Msg.HeartbeatMessage;
 import util.DatagramHelper;
 
 public class Heartbeater extends TimerTask {
-    private DatagramSocket sock;
     private InetAddress addr;
-    private long lastSentMessage = 0;
-    private HashMap<Integer, Integer> ptr;
+    private int portNum = 0;
+    private DatagramSocket sock;
     
-    public Heartbeater(DatagramSocket dSock, InetAddress groupAddr, HashMap<Integer, Integer> flag) {
+    public Heartbeater(DatagramSocket dSock, InetAddress groupAddr, int sCport) throws SocketException {
         this.sock = dSock;
         this.addr = groupAddr;
-        this.ptr = flag;
+        portNum = sCport;
     }
 
-    public void run() {
+	public void run() {
         //System.out.println("Sending out heartbeat");
         HeartbeatMessage msg = new HeartbeatMessage();
-        msg.num = lastSentMessage++;
+        msg.num = portNum;
         msg.msg = "HEY";
         try {
             DatagramPacket pkt = DatagramHelper.encodeMessage(msg, addr, PublicParamters.GROUP_PORT);
