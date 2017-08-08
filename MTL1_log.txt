@@ -1,0 +1,9 @@
+2017/08/08 02:24:08 : Manager: MTL1000 MTL creates Student record.
+2017/08/08 02:24:08 : MTL1000|Sucessfully write Student record. Record ID: SR10000
+2017/08/08 02:24:08 : Manager: MTL1000 MTL creates Student record.
+2017/08/08 02:24:08 : MTL1000|Sucessfully write Student record. Record ID: SR10000
+2017/08/08 02:24:08 : Manager: MTL1000 MTL creates Student record.
+2017/08/08 02:24:08 : MTL1000|Sucessfully write Student record. Record ID: SR10000
+2017/08/08 02:24:08 : try to count all record at MTL
+2017/08/08 02:24:08 : try to count all record at MTL
+2017/08/08 02:24:08 : try to count all record at MTL
