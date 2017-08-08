@@ -21,7 +21,6 @@ public interface PublicParamters {
 		DDO;
 
 	};
-	
 		
 	enum Specialization {FRENCH, MATHS, SCIENCE};
 	enum Course {FRENCH, MATHS, SCIENCE};
@@ -43,5 +42,8 @@ public interface PublicParamters {
 	final String ORB_INITIAL_PORT = "1050";
 	
 	public DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
-
+	
+    String JAR_FILE_ROOT_PATH = "E:\\Concordia\\JavaProject\\Comp6231Project\\out\\artifacts";
+    String PROJECT_ROOT_PATH  = "E:\\Concordia\\JavaProject\\Comp6231Project";
+    String JAR_FILE_NAME = "ReplicaRunner";
 }
