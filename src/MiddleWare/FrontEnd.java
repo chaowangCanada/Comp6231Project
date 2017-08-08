@@ -41,7 +41,7 @@ public class FrontEnd extends DCMSPOA{
 		private int leaderPort;
 		
 		public FrontEnd() throws IOException{
-			leaderPort = PublicParamters.SERVER_PORT_REPLICA0;
+			leaderPort = PublicParamters.SERVER_PORT_FEND2;
 //			replica1 = new Replica(++replicaID_base, PublicParamters.SERVER_PORT_REPLICA0);
 //			replica2 = new Replica(++replicaID_base, PublicParamters.SERVER_PORT_REPLICA1);
 //			replica3 = new Replica(++replicaID_base, PublicParamters.SERVER_PORT_REPLICA2);

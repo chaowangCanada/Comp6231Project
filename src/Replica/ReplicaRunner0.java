@@ -5,15 +5,16 @@ import java.io.IOException;
 import Config.PublicParamters;
 import MiddleWare.FrontEnd;
 
-public class ReplicaRunner1 {
+public class ReplicaRunner0 {
 
 	public static void main(String[] args) throws IOException, ClassNotFoundException {
 		// TODO Auto-generated method stub
-		Replica replica1 = new Replica(1,PublicParamters.SERVER_PORT_FEND1, PublicParamters.SERVER_PORT_REPLICA1);
+		Replica replica0 = new Replica(1,PublicParamters.SERVER_PORT_FEND0, PublicParamters.SERVER_PORT_REPLICA0);
 		
-		replica1.openUDPListener();
+		replica0.openUDPListener();
+		
+		replica0.launch();
 
-		replica1.launch();
 
 	}
 
