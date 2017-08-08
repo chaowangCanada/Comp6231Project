@@ -394,6 +394,7 @@ public class Replica {
 								for(int port : PublicParamters.SERVER_PORT_FEND_ARR){
 								if(port != server.FEport){
 									areAllServerGood = sendToMember(requestStr, port);
+									System.out.println(areAllServerGood);
 									}
 								}
 								// member server are all reply
