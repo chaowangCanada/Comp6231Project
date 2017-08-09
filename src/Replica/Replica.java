@@ -3,6 +3,7 @@ package Replica;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
@@ -30,6 +31,9 @@ import Msg.Message;
 import Msg.PsIdMessage;
 import Msg.ShutDownAcknowledge;
 import Msg.VictoryMessage;
+import net.rudp.ReliableServerSocket;
+import net.rudp.ReliableSocket;
+import net.rudp.ReliableSocketOutputStream;
 import util.DatagramHelper;
 import util.Operation;
 
@@ -709,7 +713,155 @@ public class Replica {
 	public void setPsId(String psId) {
 		this.psId = psId;
 	}
-
-
 	
+	private class UDPListenThread extends Thread{
+
+		private Replica server = null;
+		
+		private String recordCount ;
+		
+		public UDPListenThread(Replica threadServer) {
+			server = threadServer;
+		}
+		
+		@Override
+		public void run() {
+			DatagramSocket aSocket = null;
+			try {
+			
+				// 5 types of reply, create student, create teacher, getRecordCount, edit record, move teacher record among server
+				while(true){
+					ReliableServerSocket serverSocket = new ReliableServerSocket(FEport);
+				    ReliableSocket connectionSocket = (ReliableSocket)serverSocket.accept();
+				    InputStreamReader inputStream = new InputStreamReader(connectionSocket.getInputStream());
+				    BufferedReader buffReader = new BufferedReader(inputStream);
+					String requestStr;
+					requestStr = buffReader.readLine();
+					// server leader
+					if(server.FEport == leaderFEPort){
+						if(!requestStr.isEmpty()){
+							// front end udp to leader server
+							if(requestStr.contains("|")){
+								String[] msgArr = requestStr.split("\\|");
+								String replyStr = "";
+								boolean areAllServerGood = true;
+								// send msg to member server first
+//								for(Replica rplic : FrontEnd.replicaList){
+//									if(rplic.getPort() != server.port){
+//										areAllServerGood = sendToMember(requestStr, rplic.getPort());
+//									}
+//								}
+								for(int port : PublicParamters.SERVER_PORT_FEND_ARR){
+								if(port != server.FEport){
+									areAllServerGood = sendToMember(requestStr, port);
+									if(areAllServerGood == false)
+										System.out.println("server " + port +" is down.");
+									}
+								}
+								// member server are all reply
+
+								if(msgArr[0].substring(0, 3).equalsIgnoreCase("mtl"))
+									replyStr = executeRequest(msgArr, mtl);
+								else if(msgArr[0].substring(0, 3).equalsIgnoreCase("lvl"))
+									replyStr = executeRequest(msgArr, lvl);
+								else if(msgArr[0].substring(0, 3).equalsIgnoreCase("ddo"))
+									replyStr = executeRequest(msgArr, ddo);
+
+							    ReliableSocket replySocket = new ReliableSocket("localhost", FEport);
+							    ReliableSocketOutputStream outputStream = (ReliableSocketOutputStream)replySocket.getOutputStream();
+							    OutputStreamWriter outputBuffer = new OutputStreamWriter(outputStream);
+							
+							    outputBuffer.write(replyStr);
+							    outputBuffer.flush();							
+							} 
+							// non-leader reply udp to leader server
+							else{
+								
+							}
+						}
+					}
+					// other non leader server
+					else{
+						if(requestStr.contains("|")){
+
+							String[] msgArr = requestStr.split("\\|");
+							String replyStr = "";
+							if(msgArr[0].substring(0, 3).equalsIgnoreCase("mtl")){
+								replyStr = executeRequest(msgArr, mtl);
+							}
+							else if(msgArr[0].substring(0, 3).equalsIgnoreCase("lvl")){
+								replyStr = executeRequest(msgArr, lvl);
+							}
+							else if(msgArr[0].substring(0, 3).equalsIgnoreCase("ddo")){
+								replyStr = executeRequest(msgArr, ddo);
+							}
+							
+						    ReliableSocket replySocket = new ReliableSocket("localhost", FEport);
+						    ReliableSocketOutputStream outputStream = (ReliableSocketOutputStream)replySocket.getOutputStream();
+						    OutputStreamWriter outputBuffer = new OutputStreamWriter(outputStream);
+						
+						    outputBuffer.write(replyStr);
+						    outputBuffer.flush();
+						}						
+					}
+					connectionSocket.close();
+				}
+			}catch (IOException e ){System.out.println("Socket"+ e.getMessage());
+			}finally { if (aSocket !=null ) aSocket.close();}
+		}
+
+		private String executeRequest(String[] msgArr, Database db) throws IOException {
+			if(msgArr[1].equalsIgnoreCase("CT")){
+				return db.createTRecord(msgArr[0], msgArr[2], msgArr[3], msgArr[4], msgArr[5], msgArr[6], msgArr[7]);
+			}
+			else if(msgArr[1].equalsIgnoreCase("CS")){
+				return db.createSRecord(msgArr[0], msgArr[2], msgArr[3], msgArr[4], msgArr[5], msgArr[6]);
+			}
+			else if(msgArr[1].equalsIgnoreCase("RC")){
+				return db.getRecordCounts(msgArr[0]);
+			}
+			else if(msgArr[1].equalsIgnoreCase("ER")){
+				return db.editRecord(msgArr[0], msgArr[2], msgArr[3], msgArr[4]);
+			}
+			else if(msgArr[1].equalsIgnoreCase("TR")){
+				return db.transferRecord(msgArr[0], msgArr[2], msgArr[3]);
+			}
+			return "error of request command";
+		}
+		
+		private boolean sendToMember(String msg, int port){
+			DatagramSocket aSocket = null;
+			
+			try{
+			    ReliableSocket replySocket = new ReliableSocket("localhost", FEport);
+			    ReliableSocketOutputStream outputStream = (ReliableSocketOutputStream)replySocket.getOutputStream();
+			    OutputStreamWriter outputBuffer = new OutputStreamWriter(outputStream);
+			
+			    outputBuffer.write(msg);
+			    outputBuffer.flush();
+
+			    InputStreamReader inputStream = new InputStreamReader(replySocket.getInputStream());
+			    BufferedReader buffReader = new BufferedReader(inputStream);
+				String str =  buffReader.readLine();
+				if(str.isEmpty())
+					return false;
+				
+				return true;
+			}
+			catch (SocketException e){
+				System.out.println("Socket"+ e.getMessage());
+			}
+			catch (IOException e){
+				System.out.println("IO: "+e.getMessage());
+			}
+			finally {
+				if(aSocket != null ) 
+					aSocket.close();
+			}
+			return false;
+			
+		}
+	}
+
+
 }

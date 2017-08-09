@@ -1,6 +1,9 @@
 package MiddleWare;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
@@ -12,7 +15,6 @@ import java.util.Properties;
 import java.util.Queue;
 import java.util.Stack;
 import java.util.AbstractMap.SimpleEntry;
-
 import org.omg.CORBA.ORB;
 import org.omg.CosNaming.NameComponent;
 import org.omg.CosNaming.NamingContextExt;
@@ -28,6 +30,8 @@ import DCMS_CORBA.DCMSPOA;
 import Record.StudentRecord;
 import Record.TeacherRecord;
 import Replica.Replica;
+import net.rudp.ReliableSocket;
+import net.rudp.ReliableSocketOutputStream;
 
 public class FrontEnd extends DCMSPOA{
 
@@ -70,13 +74,10 @@ public class FrontEnd extends DCMSPOA{
 		private class ProcessQueueThread extends Thread{
 
 			private Replica replica = null;
-			
-			public ProcessQueueThread(Replica server) {
-				replica = server;
-			}
+
 			
 			public ProcessQueueThread(FrontEnd frontEnd) {
-				// TODO Auto-generated constructor stub
+				
 			}
 
 			@Override
@@ -340,6 +341,58 @@ public class FrontEnd extends DCMSPOA{
 			}
 			return "request cannot get proceeded";		
 		}
+		
+		private class ProcessQueuThread extends Thread{
+
+			private Replica replica = null;
+			
+			public ProcessQueuThread(Replica server) {
+				replica = server;
+			}
+			
+
+			@Override
+			public void run() {
+
+				DatagramSocket aSocket = null;
+//				while(true){
+						
+					while(!requestQ.isEmpty()){
+						try{
+						
+					    ReliableSocket clientSocket = new ReliableSocket("localhost", leaderPort);
+					    ReliableSocketOutputStream outputStream = (ReliableSocketOutputStream) clientSocket.getOutputStream();
+					    OutputStreamWriter outputBuffer = new OutputStreamWriter(outputStream);
+					
+						String message = requestQ.poll();
+
+					    outputBuffer.write(message);
+					    outputBuffer.flush();
+						
+					    InputStreamReader inputStream = new InputStreamReader(clientSocket.getInputStream());
+					    BufferedReader buffReader = new BufferedReader(inputStream);
+						String str =  buffReader.readLine();
+						if(str.isEmpty())
+							return ;
+							
+						if(str.indexOf("|") != -1)
+							processedRequest.push(new SimpleEntry<String, String>(str.substring(0, str.indexOf("|")), str));
+	
+						}catch (SocketException e){
+							System.out.println("Socket"+ e.getMessage());
+						}
+						catch (IOException e){
+							System.out.println("IO: "+e.getMessage());
+						}
+						finally {
+							if(aSocket != null ) 
+								aSocket.close();
+						}
+					}
+//				}
+			}
+		}
+
 
 }
 
